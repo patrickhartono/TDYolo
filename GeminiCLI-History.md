@@ -26,12 +26,10 @@ This document logs all interactions and changes made to the TDYolo project throu
 
 ### Code Refactoring
 - **Code Review**: Reviewed the `python-script/main-TDYolo.py` script and identified that the `onCook` function was overly complex and could be improved for readability and maintainability.
-- **Refactoring**: Broke down the `onCook` function into smaller, more manageable helper functions:
-    - `get_parameters()`: To fetch user parameters from the TouchDesigner UI.
-    - `convert_to_bgr()`: To handle image format conversion.
-    - `parse_class_filter()`: To process the class filtering logic.
-    - `run_detection()`: To execute the core YOLO model prediction.
-    - `update_report_table()`: To populate the detailed 'report' DAT.
-    - `update_summary_table()`: To populate the 'summary' DAT.
-    - `process_output_frame()`: To handle the final image rendering and conversion.
+- **Refactoring**: Broke down the `onCook` function into smaller, more manageable helper functions.
 - **Git Commit**: Committed the refactored script to the Git repository with the message "Refactor: Modularize main-TDYolo.py for clarity".
+
+### Revert Refactoring
+- **Issue Identification**: The user reported that the refactoring broke existing functionality in the TouchDesigner project.
+- **Revert Action**: Used `git revert` to undo the problematic commit (`de41d6c`). This restored `python-script/main-TDYolo.py` to its previous working state.
+- **Git Commit**: Committed the revert action with the message "Revert \"Refactor: Modularize main-TDYolo.py for clarity\"".
