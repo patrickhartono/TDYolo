@@ -33,3 +33,12 @@ This document logs all interactions and changes made to the TDYolo project throu
 - **Issue Identification**: The user reported that the refactoring broke existing functionality in the TouchDesigner project.
 - **Revert Action**: Used `git revert` to undo the problematic commit (`de41d6c`). This restored `python-script/main-TDYolo.py` to its previous working state.
 - **Git Commit**: Committed the revert action with the message "Revert \"Refactor: Modularize main-TDYolo.py for clarity\"".
+
+### Conda Environment Creation
+- **New Environment**: Created a new Conda environment named `yolo11Git-test` using `environment.yml`.
+
+### Object Detection Visualization Enhancements
+- **Indexed Labels**: Modified `main-TDYolo.py` to display indexed labels (e.g., "person 1", "person 2") on bounding boxes.
+- **Text Boldness Fix**: Adjusted text thickness to remove bolding from labels.
+- **Consistent Class Colors**: Implemented a system to assign a consistent, unique color (from a predefined palette) to each detected object class for its bounding box and label background. Text color remains white.
+- **Color Palette Update**: Removed yellow from the color palette based on user feedback.

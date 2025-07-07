@@ -10,6 +10,18 @@ import cv2
 from ultralytics import YOLO
 import torch
 
+# Define a list of colors in BGR format
+# Red, Green, Blue, Purple
+CLASS_COLORS_PALETTE = [
+    (0, 0, 255),    # Red
+    (0, 255, 0),    # Green
+    (255, 0, 0),    # Blue
+    (255, 0, 255)   # Purple
+]
+
+# Map each class name to a consistent color
+class_color_map = {}
+
 # Check if MPS (Metal Performance Shaders) is available on M4 Pro
 def get_optimal_device():
     if torch.backends.mps.is_available():
@@ -26,6 +38,10 @@ def get_optimal_device():
 device = get_optimal_device()
 model = YOLO('yolo11n.pt', task='detect')
 model.to(device)  # Move model to optimal device
+
+# Populate class_color_map
+for i, class_name in enumerate(model.names.values()):
+    class_color_map[class_name] = CLASS_COLORS_PALETTE[i % len(CLASS_COLORS_PALETTE)]
 
 def onSetupParameters(scriptOp):
     page = scriptOp.appendCustomPage('YOLO')
@@ -237,10 +253,39 @@ def onCook(scriptOp):
         except Exception as e:
             print(f'[TABLE] Error updating summary table: {e}')
 
-        # Only draw bounding boxes if there are detections AND drawBox is enabled
+        # Custom drawing logic with indexed labels
         if drawBox and len(det.boxes) > 0:
-            rendered = det.plot()      # BGR image with bounding boxes
-        # If no detections or drawBox is False, use original image (already set above)
+            # Create a copy of the image to draw on
+            rendered = bgr.copy()
+            
+            # Re-use the object counting logic for unique IDs in labels
+            label_counters = {}
+
+            for box in det.boxes:
+                # Get detection data
+                x1, y1, x2, y2 = [int(coord) for coord in box.xyxy[0]]
+                class_id = int(box.cls[0])
+                class_name = model.names[class_id]
+                confidence_val = float(box.conf[0])
+
+                # Increment counter for this class to get a unique ID
+                label_counters[class_name] = label_counters.get(class_name, 0) + 1
+                obj_id = label_counters[class_name]
+
+                # Create the custom label
+                label = f'{class_name} {obj_id}: {confidence_val:.2f}'
+
+                # --- Draw bounding box ---
+                current_class_color = class_color_map.get(class_name, (255, 255, 255)) # Default to white if class not in map
+                cv2.rectangle(rendered, (x1, y1), (x2, y2), current_class_color, 2)
+
+                # --- Draw label background ---
+                label_size, base_line = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+                label_y1 = max(y1, label_size[1] + 10)
+                cv2.rectangle(rendered, (x1, label_y1 - label_size[1] - 10), (x1 + label_size[0], label_y1 - base_line), current_class_color, cv2.FILLED)
+
+                # --- Draw label text ---
+                cv2.putText(rendered, label, (x1, label_y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1) # White text
 
     # Convert to RGBA for TouchDesigner and flip vertically for correct orientation
     # Optimized memory handling with explicit copy=False where safe
