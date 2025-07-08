@@ -107,16 +107,13 @@ def onCook(scriptOp):
         # print('[DEBUG] Confidence: default (0.25)')
         
     try:
-        # Try different ways to access the parameter
-        if hasattr(scriptOp.par, 'Classes'):
-            classes_str_raw = scriptOp.par.Classes.val  # Use .val instead of .eval()
-            classes_str = classes_str_raw.strip() if classes_str_raw is not None else ''
-        else:
-            classes_str = ''
-        # print(f'[DEBUG] Classes from UI: "{classes_str}"')
+        # Get classes from parameter1 DAT using expression op('parameter1')[1, 1].val
+        classes_str_raw = op('parameter1')[1, 1].val if op('parameter1') is not None else ''
+        classes_str = classes_str_raw.strip() if classes_str_raw is not None else ''
+        # print(f'[DEBUG] Classes from parameter1[1,1]: "{classes_str}"')  # Disabled debug
     except Exception as e:
         classes_str = ''
-        # print(f'[DEBUG] Classes: error accessing parameter: {e}')
+        # print(f'[DEBUG] Classes: error accessing parameter1[1,1]: {e}')  # Disabled debug
     
     frame = scriptOp.inputs[0].numpyArray()
     if frame is None:
@@ -129,26 +126,35 @@ def onCook(scriptOp):
     # Parse class filter - determine what to detect
     class_filter = None  # None means detect all classes
     if classes_str:  # If there's text in the Classes field
+        # print(f'[DEBUG] Processing classes string: "{classes_str}"')  # Disabled debug
         # Convert class names to indices (YOLO class mapping)
         class_names = [name.strip() for name in classes_str.split(',') if name.strip()]
+        # print(f'[DEBUG] Parsed class names: {class_names}')  # Disabled debug
         if class_names:
             # Get YOLO class names and find indices
             yolo_names = model.names  # Dict of {index: class_name}
+            # print(f'[DEBUG] Available YOLO classes: {list(yolo_names.values())}')  # Disabled debug
             class_indices = []
             for class_name in class_names:
                 for idx, yolo_name in yolo_names.items():
                     if yolo_name.lower() == class_name.lower():
                         class_indices.append(idx)
+                        # print(f'[DEBUG] Found match: "{class_name}" -> index {idx}')  # Disabled debug
                         break
+                else:
+                    print(f'[YOLO] Warning: No match found for: "{class_name}"')  # Keep important warnings
             if class_indices:
                 class_filter = class_indices
-                # print(f'[YOLO] Detecting only: {class_names} -> indices: {class_indices}')
+                # print(f'[YOLO] Detecting only: {class_names} -> indices: {class_indices}')  # Disabled debug
             else:
                 print(f'[YOLO] Warning: No valid classes found for: {class_names}')
                 print(f'[YOLO] Available classes: {list(yolo_names.values())[:10]}...') # Show first 10
+    else:
+        # print('[DEBUG] No classes string provided, detecting all objects')  # Disabled debug
+        pass
     
     if class_filter is None:
-        # print('[YOLO] Detecting all objects (no filter)')
+        # print('[YOLO] Detecting all objects (no filter)')  # Disabled debug
         pass
 
     # Initialize with original image
@@ -160,6 +166,7 @@ def onCook(scriptOp):
         pass
     else:
         # Run YOLO detection with MPS optimization and appropriate filtering
+        # print(f'[DEBUG] Running YOLO with class_filter: {class_filter}')  # Disabled debug
         with torch.no_grad():  # Disable gradient computation for inference speedup
             results = model.predict(
                 source=bgr, 
