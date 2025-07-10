@@ -1,5 +1,10 @@
 # TDYolo - TouchDesigner YOLO Integration
 
+This project was created and dedicated to all the students, colleagues, and friends during my time teaching at the Department of Computational Art at Goldsmiths, University of London 
+
+It is a token of my gratitude and farewell for now! Thank you all for everything! 
+
+
 A production-ready real-time object detection system integrating YOLOv11 with TouchDesigner for artistic and interactive applications.
 
 ![Project Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
