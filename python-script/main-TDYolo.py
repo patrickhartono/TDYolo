@@ -57,14 +57,20 @@ def onSetupParameters(scriptOp):
     # Confidence threshold
     p = page.appendFloat('Confidence', label='Confidence Threshold')
     p[0].default = 0.25  # Lowered from 0.5 for better detection
-    p[0].min = 0.0
-    p[0].max = 1.0
+    p[0].normMin = 0.0
+    p[0].normMax = 1.0
     
     # Frame skip for performance optimization
     p = page.appendInt('Frameskip', label='Frame Skip (0=process all)')
     p[0].default = 0  # 0 = process every frame, 1 = skip 1 frame, etc.
-    p[0].min = 0
-    p[0].max = 10
+    p[0].normMin = 0
+    p[0].normMax = 10
+    
+    # Detection limit
+    p = page.appendInt('Detectionlimit', label='Detection Limit (0=unlimited)')
+    p[0].default = 0  # 0 = unlimited detection
+    p[0].normMin = 0
+    p[0].normMax = 100
     
     return
 
@@ -105,6 +111,13 @@ def onCook(scriptOp):
     except:
         confidence = 0.25
         # print('[DEBUG] Confidence: default (0.25)')
+        
+    try:
+        detection_limit = scriptOp.par.Detectionlimit.eval() if hasattr(scriptOp.par, 'Detectionlimit') else 0
+        # print(f'[DEBUG] Detection Limit: {detection_limit}')
+    except:
+        detection_limit = 0
+        # print('[DEBUG] Detection Limit: default (0)')
         
     try:
         # Get classes from parameter1 DAT using expression op('parameter1')[1, 1].val
@@ -181,6 +194,22 @@ def onCook(scriptOp):
         det = results[0]
         # print(f'[YOLO] Found {len(det.boxes)} detections')
 
+        # Apply detection limit - sort by confidence and take top N
+        if len(det.boxes) > 0 and detection_limit > 0:
+            # Sort boxes by confidence (descending) and take top N
+            confidences = det.boxes.conf.cpu().numpy()
+            sorted_indices = np.argsort(confidences)[::-1]  # Sort descending
+            
+            # Limit to top N detections
+            limit_indices = sorted_indices[:detection_limit]
+            
+            # Fix negative stride issue by making a copy
+            limit_indices = limit_indices.copy()
+            
+            # Create new detection result with limited boxes
+            det.boxes = det.boxes[limit_indices]
+            # print(f'[YOLO] Limited to top {len(det.boxes)} detections (limit: {detection_limit})')
+        
         # Show detailed detection information
         if len(det.boxes) > 0:
             for i, box in enumerate(det.boxes):
@@ -198,7 +227,7 @@ def onCook(scriptOp):
                 report_table.clear()
                 
                 # Set column headers first
-                report_table.appendRow(['Object_Type', 'Confidence', 'ID'])
+                report_table.appendRow(['Object_Type', 'Confidence', 'X_Center', 'Y_Center', 'Width', 'Height', 'ID'])
                 
                 # Count objects by type and collect their confidences
                 total_detections = len(det.boxes)
@@ -212,16 +241,31 @@ def onCook(scriptOp):
                         confidence_val = float(box.conf[0])
                         class_name = model.names[class_id]
                         
+                        # Calculate bounding box coordinates
+                        x1, y1, x2, y2 = [float(coord) for coord in box.xyxy[0]]
+                        x_center = (x1 + x2) / 2.0
+                        y_center = (y1 + y2) / 2.0
+                        width = x2 - x1
+                        height = y2 - y1
+                        
                         # Increment counter for this object type
                         if class_name not in object_counters:
                             object_counters[class_name] = 0
                         object_counters[class_name] += 1
                         
-                        # Add row: [object_name, confidence, id_within_type]
-                        report_table.appendRow([class_name, f'{confidence_val:.3f}', str(object_counters[class_name])])
+                        # Add row: [object_name, confidence, x_center, y_center, width, height, id_within_type]
+                        report_table.appendRow([
+                            class_name, 
+                            f'{confidence_val:.3f}', 
+                            f'{x_center:.1f}', 
+                            f'{y_center:.1f}', 
+                            f'{width:.1f}', 
+                            f'{height:.1f}', 
+                            str(object_counters[class_name])
+                        ])
                 else:
                     # If no detections, add empty row
-                    report_table.appendRow(['none', '0.000', '0'])
+                    report_table.appendRow(['none', '0.000', '0.0', '0.0', '0.0', '0.0', '0'])
                     
         except Exception as e:
             print(f'[TABLE] Error updating report table: {e}')
