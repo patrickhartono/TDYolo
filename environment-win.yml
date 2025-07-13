@@ -1,0 +1,44 @@
+name: TDYolo
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11.10
+  - pip
+  - pip:
+      - certifi
+      - charset-normalizer
+      - contourpy
+      - cycler
+      - filelock
+      - fonttools
+      - fsspec
+      - idna
+      - jinja2
+      - kiwisolver
+      - markupsafe
+      - matplotlib
+      - mpmath
+      - networkx
+      - numpy
+      - opencv-python
+      - packaging
+      - pandas
+      - pillow
+      - psutil
+      - py-cpuinfo
+      - pyparsing
+      - python-dateutil
+      - pytz
+      - pyyaml
+      - requests
+      - scipy
+      - setuptools
+      - six
+      - sympy
+      - tqdm
+      - typing-extensions
+      - tzdata
+      - ultralytics
+      - ultralytics-thop
+      - urllib3
