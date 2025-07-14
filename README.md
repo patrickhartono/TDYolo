@@ -162,73 +162,13 @@ python -c "from ultralytics import YOLO; print('YOLO installation successful')"
 - **Apple Silicon**: `MPS available: True`
 - **CPU-only**: `CUDA available: False` (this is normal for CPU installations)
 
-### Step 5: Configure TouchDesigner Project
+## 🎛️ Configuration (UI Parameters)
 
-1. **Open TouchDesigner Project**
-   - Launch TouchDesigner
-   - Open `TD-Py-yolo11-TD.toe` from the project directory
+### Yolo Parameters
+<img width="398" height="571" alt="UI-TDYolo" src="https://github.com/user-attachments/assets/1fab43e5-2cfe-45e3-a83d-a37c50a1699d" />
 
-2. **Configure condaParam DAT**
-   - Locate the `condaParam` Table DAT in the project
-   - Update the following values:
 
-   | Row | Column 0 | Column 1 |
-   |-----|----------|-----------|
-   | 0 | name | value |
-   | 1 | Condaenv | `your_environment_name` |
-   | 2 | User | `your_system_username` |
-   | 3 | Conda | 0 |
-
-   **Example:**
-   ```
-   Row 1: Condaenv | TDYolo
-   Row 2: User     | johnsmith
-   ```
-
-3. **Setup Environment Script**
-   - Copy contents of `python-script/extCondaEnv.py`
-   - Paste into the `extCondaEnv` Script DAT
-   - Set Execute to "On"
-   - Restart TouchDesigner to initialize environment
-
-4. **Setup Main YOLO Script**
-   - Copy contents of `python-script/main-TDYolo.py`
-   - Paste into the main `script2` Script DAT
-   - Set Execute to "On"
-
-### Step 6: Verify Setup
-
-1. **Check Console Output**
-   Look for these success messages:
-   ```
-   [ENV] ✅ Conda environment setup complete!
-   [ENV] ✅ CUDA available - 1 GPU(s) detected      # Windows with GPU
-   [ENV] ✅ MPS (Metal Performance Shaders) available # macOS Apple Silicon
-   [ENV] Ready for YOLO inference on cuda/mps/cpu
-   [YOLO] Using CUDA/MPS/CPU
-   ```
-
-2. **Test Detection**
-   - Ensure video input is connected
-   - Check that bounding boxes appear on objects
-   - Verify data appears in report and summary tables
-
-3. **Performance Verification**
-   Check console for performance indicators:
-   - **GPU**: Should process 30-60 FPS
-   - **CPU**: Processes 3-15 FPS (normal for CPU-only)
-
-## 🎛️ Configuration
-
-### UI Parameters
-
-Access custom parameters in the Script DAT properties:
-
-#### **Draw Bounding Box** (Toggle)
-- Enable/disable visual bounding box rendering
-- Default: On
-
-#### **Detection Classes** (String)
+#### **Detection Labels** (String)
 - Comma-separated list of object classes to detect
 - Example: `person,car,dog`
 - Leave empty for all classes
@@ -248,13 +188,16 @@ Access custom parameters in the Script DAT properties:
 - 0 = unlimited
 - Limits to highest confidence detections
 
-### condaParam DAT Configuration
+### Conda Parameters
+
+<img width="398" height="349" alt="UI-Conda" src="https://github.com/user-attachments/assets/d7812319-c5bf-4cbb-8aaf-ef8de545a1ec" />
+<br><br>
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | Condaenv | Your conda environment name | `tdyolo` |
 | User | Your system username | `johnsmith` |
-| Conda | Enable/disable conda setup | `0` or `1` |
+| Conda-Refresh | Activate Selected Conda Env | `0` or `1` (momentary button) |
 
 ## 📊 Data Output
 
