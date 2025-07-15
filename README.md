@@ -249,10 +249,11 @@ Real-time detection data with coordinates:
 | Height | Bounding box height | `180.0` |
 | ID | Object instance number | `1` |
 
-<img width="488" height="203" alt="Screenshot 2025-07-14 214308" src="https://github.com/user-attachments/assets/bea6519c-ae91-455e-b3cb-e0c8e2c42037" />
+
+<img width="490" height="215" alt="Screenshot 2025-07-15 115016" src="https://github.com/user-attachments/assets/34714135-fcb3-4ffb-ba3a-bd0524e60f0e" />
 
 
-### Summary Table
+### Count Table
 Object count aggregation:
 
 | Column | Description | Example |
