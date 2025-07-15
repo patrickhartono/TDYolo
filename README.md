@@ -430,7 +430,7 @@ TDYolo/
 ### TouchDesigner Integration Examples
 In this example I'm using DAT to CHOP to extract XY value from the 1st and 2nd row of the Report DAT
 
-<img width="544" height="244" alt="Screenshot 2025-07-15 114224" src="https://github.com/user-attachments/assets/720bf38c-20e3-4c99-97a1-421cb4d0a0f2" />
+<img width="800" height="344" alt="Screenshot 2025-07-15 114224" src="https://github.com/user-attachments/assets/720bf38c-20e3-4c99-97a1-421cb4d0a0f2" />
 
 
 ### Performance Recommendations by Hardware
