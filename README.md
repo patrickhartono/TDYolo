@@ -49,8 +49,8 @@ A production-ready real-time object detection system integrating YOLOv11 with To
   - **Minimum**: Any system with 8GB RAM (CPU-only mode)
 
 ### Required Software
-- [TouchDesigner](https://derivative.ca/) (Commercial or Educational license)
-- [Miniconda](https://docs.conda.io/en/latest/miniconda.html), [Anaconda](https://www.anaconda.com/), or [MiniForge](https://github.com/conda-forge/miniforge)
+- [TouchDesigner](https://derivative.ca/) (Commercial, Non-Commercial or Educational license)
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html), [Anaconda](https://www.anaconda.com/), [MiniForge](https://github.com/conda-forge/miniforge) or [MambaForge](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html)
 - Git (for cloning repository)
 
 ### GPU Requirements (Optional but Recommended)
@@ -162,73 +162,59 @@ python -c "from ultralytics import YOLO; print('YOLO installation successful')"
 - **Apple Silicon**: `MPS available: True`
 - **CPU-only**: `CUDA available: False` (this is normal for CPU installations)
 
-### Step 5: Configure TouchDesigner Project
+## 🎛️ Configuration (UI Parameters)
 
-1. **Open TouchDesigner Project**
-   - Launch TouchDesigner
-   - Open `TD-Py-yolo11-TD.toe` from the project directory
+Once you’ve managed to create the Conda environment and all the verifications above have succeeded, you can open the TouchDesigner file TDYolo.toe (this may continue to change, so make sure to check the latest version).
 
-2. **Configure condaParam DAT**
-   - Locate the `condaParam` Table DAT in the project
-   - Update the following values:
+The first time you open it, you will encounter errors because you need to set the Conda path and user according to your computer’s configuration.
 
-   | Row | Column 0 | Column 1 |
-   |-----|----------|-----------|
-   | 0 | name | value |
-   | 1 | Condaenv | `your_environment_name` |
-   | 2 | User | `your_system_username` |
-   | 3 | Conda | 0 |
+So, please follow the step-by-step guide below.
 
-   **Example:**
-   ```
-   Row 1: Condaenv | TDYolo
-   Row 2: User     | johnsmith
-   ```
+### Conda Parameters
 
-3. **Setup Environment Script**
-   - Copy contents of `python-script/extCondaEnv.py`
-   - Paste into the `extCondaEnv` Script DAT
-   - Set Execute to "On"
-   - Restart TouchDesigner to initialize environment
+<img width="398" height="349" alt="UI-Conda" src="https://github.com/user-attachments/assets/d7812319-c5bf-4cbb-8aaf-ef8de545a1ec" />
+<br><br>
 
-4. **Setup Main YOLO Script**
-   - Copy contents of `python-script/main-TDYolo.py`
-   - Paste into the main `script2` Script DAT
-   - Set Execute to "On"
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| Condaenv | Your conda environment name | `tdyolo` |
+| User | Your system username | `johnsmith` |
+| Conda-Refresh | Activate Selected Conda Env | `0` or `1` (momentary button) |
 
-### Step 6: Verify Setup
+Finding Your Conda Path and Username
+To properly configure the Conda environment in the UI, you’ll need to know two things:
 
-1. **Check Console Output**
-   Look for these success messages:
-   ```
-   [ENV] ✅ Conda environment setup complete!
-   [ENV] ✅ CUDA available - 1 GPU(s) detected      # Windows with GPU
-   [ENV] ✅ MPS (Metal Performance Shaders) available # macOS Apple Silicon
-   [ENV] Ready for YOLO inference on cuda/mps/cpu
-   [YOLO] Using CUDA/MPS/CPU
-   ```
+1. The path to your Conda installation
 
-2. **Test Detection**
-   - Ensure video input is connected
-   - Check that bounding boxes appear on objects
-   - Verify data appears in report and summary tables
+2. Your system username
 
-3. **Performance Verification**
-   Check console for performance indicators:
-   - **GPU**: Should process 30-60 FPS
-   - **CPU**: Processes 3-15 FPS (normal for CPU-only)
+**For macOS Users**
 
-## 🎛️ Configuration
+To find your Conda path:
+Open the Terminal and type:
 
-### UI Parameters
+```bash
+which conda
+# Output:
+# /Users/yourusername/miniconda3/bin/conda
+```
 
-Access custom parameters in the Script DAT properties:
+**For Windows Users**
 
-#### **Draw Bounding Box** (Toggle)
-- Enable/disable visual bounding box rendering
-- Default: On
+To find your Conda path:
+Open Anaconda Prompt or Command Prompt and type:
 
-#### **Detection Classes** (String)
+```bat
+where conda
+:: Output:
+:: C:\Users\YourName\anaconda3\Scripts\conda.exe
+```
+
+### Yolo Parameters
+<img width="398" height="571" alt="UI-TDYolo" src="https://github.com/user-attachments/assets/1fab43e5-2cfe-45e3-a83d-a37c50a1699d" />
+
+
+#### **Detection Labels** (String)
 - Comma-separated list of object classes to detect
 - Example: `person,car,dog`
 - Leave empty for all classes
@@ -248,14 +234,6 @@ Access custom parameters in the Script DAT properties:
 - 0 = unlimited
 - Limits to highest confidence detections
 
-### condaParam DAT Configuration
-
-| Parameter | Description | Example |
-|-----------|-------------|---------|
-| Condaenv | Your conda environment name | `tdyolo` |
-| User | Your system username | `johnsmith` |
-| Conda | Enable/disable conda setup | `0` or `1` |
-
 ## 📊 Data Output
 
 ### Report Table
@@ -271,13 +249,20 @@ Real-time detection data with coordinates:
 | Height | Bounding box height | `180.0` |
 | ID | Object instance number | `1` |
 
-### Summary Table
+
+<img width="490" height="215" alt="Screenshot 2025-07-15 115016" src="https://github.com/user-attachments/assets/34714135-fcb3-4ffb-ba3a-bd0524e60f0e" />
+
+
+### Count Table
 Object count aggregation:
 
 | Column | Description | Example |
 |--------|-------------|---------|
 | Object_Type | Detected class name | `person` |
 | Count | Number of instances | `3` |
+
+<img width="288" height="248" alt="Screenshot 2025-07-14 214510" src="https://github.com/user-attachments/assets/e35a2a12-d878-465a-99f4-f81ba101bcfc" />
+
 
 ## 🔧 Troubleshooting
 
@@ -437,21 +422,16 @@ TDYolo/
 
 ### Coordinate System
 - **Origin**: Top-left corner (0,0)
-- **X_Center**: 0 to input_width (relative to source resolution)
-- **Y_Center**: 0 to input_height (relative to source resolution)
+
+- **X_Center**: Pixel coordinates in source resolution (e.g.,320 for 640px input)
+- **Y_Center**: Pixel coordinates in source resolution (e.g.,320 for 640px input)
 - **Width/Height**: Pixel dimensions in source resolution
 
 ### TouchDesigner Integration Examples
-```python
-# Access detection data in TouchDesigner
-report_data = op('report')
-x_center = float(report_data[1, 'X_Center'].val)  # First detection X
-y_center = float(report_data[1, 'Y_Center'].val)  # First detection Y
+In this example I'm using DAT to CHOP to extract XY value from the 1st and 2nd row of the Report DAT
 
-# Use for positioning effects
-op('transform1').par.tx = x_center / 1920  # Normalize to 0-1
-op('transform1').par.ty = y_center / 1080
-```
+<img width="800" height="344" alt="Screenshot 2025-07-15 114224" src="https://github.com/user-attachments/assets/720bf38c-20e3-4c99-97a1-421cb4d0a0f2" />
+
 
 ### Performance Recommendations by Hardware
 
@@ -472,47 +452,6 @@ op('transform1').par.ty = y_center / 1080
 - **Basic detection**: Detection Limit 1-3, Frame Skip 3-5
 - **Expected FPS**: 3-15 FPS
 - **Confidence**: 0.4-0.6 (higher to reduce processing)
-
-## 🔄 Updates and Maintenance
-
-### Updating YOLOv11 Model
-```bash
-# Download latest model
-wget https://github.com/ultralytics/assets/releases/download/v8.2.0/yolo11n.pt
-
-# Or use different model sizes
-# yolo11s.pt (small), yolo11m.pt (medium), yolo11l.pt (large), yolo11x.pt (extra large)
-```
-
-### Updating Dependencies
-
-#### For Windows (CUDA installations)
-```bash
-# Update standard packages
-conda activate TDYolo
-pip install --upgrade ultralytics opencv-python
-
-# Update PyTorch CUDA (if needed)
-pip install --upgrade --index-url https://download.pytorch.org/whl/cu118 torch torchvision torchaudio
-```
-
-#### For macOS (MPS installations)
-```bash
-# Update conda environment
-conda env update -f environment-mac.yml
-
-# Update specific packages
-pip install --upgrade ultralytics opencv-python
-```
-
-#### Environment Recreation (if issues persist)
-```bash
-# Remove old environment
-conda remove --name TDYolo --all
-
-# Recreate with updated files
-# Follow installation steps for your platform
-```
 
 ## 📈 Performance Optimization
 
@@ -576,6 +515,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Derivative** for TouchDesigner platform
 - **PyTorch** team for hardware acceleration frameworks
 - **OpenCV** community for computer vision tools
+- **extCondaEnv.py** developed using this tutorial (code example): https://derivative.ca/community-post/tutorial/anaconda-miniconda-managing-python-environments-and-3rd-party-libraries 
 
 ## 📞 Support
 
