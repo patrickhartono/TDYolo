@@ -129,7 +129,7 @@ def detect_compute_device():
             device_info['cuda_available'] = True
             device_info['device'] = 'cuda'
             cuda_count = torch.cuda.device_count()
-            print(f"[ENV] ✅ CUDA available - {cuda_count} GPU(s) detected")
+            print(f"[ENV] [OK] CUDA available - {cuda_count} GPU(s) detected")
             for i in range(cuda_count):
                 gpu_name = torch.cuda.get_device_name(i)
                 print(f"[ENV]   GPU {i}: {gpu_name}")
@@ -138,13 +138,13 @@ def detect_compute_device():
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             device_info['mps_available'] = True
             device_info['device'] = 'mps'
-            print(f"[ENV] ✅ MPS (Metal Performance Shaders) available")
+            print(f"[ENV] [OK] MPS (Metal Performance Shaders) available")
         
         else:
-            print(f"[ENV] ℹ️  Using CPU (no GPU acceleration available)")
+            print(f"[ENV] [INFO] Using CPU (no GPU acceleration available)")
             
     except ImportError:
-        print(f"[ENV] ℹ️  PyTorch not yet loaded - device detection will be done later")
+        print(f"[ENV] [INFO] PyTorch not yet loaded - device detection will be done later")
     except Exception as e:
         print(f"[ENV] Warning: Error during device detection: {e}")
     
@@ -176,7 +176,7 @@ def setup_windows_conda_env(conda_base, conda_env):
             try:
                 os.add_dll_directory(dll_dir)
                 dll_dirs_added.append(dll_dir)
-                print(f"[ENV] ✅ Added DLL directory: {dll_dir}")
+                print(f"[ENV] [OK] Added DLL directory: {dll_dir}")
             except Exception as e:
                 print(f"[ENV] Warning: Could not add DLL directory {dll_dir}: {e}")
     
@@ -187,12 +187,12 @@ def setup_windows_conda_env(conda_base, conda_env):
             current_path = os.environ.get('PATH', '')
             if path_dir not in current_path:
                 os.environ['PATH'] = path_dir + os.pathsep + current_path
-                print(f"[ENV] ✅ Added to PATH: {path_dir}")
+                print(f"[ENV] [OK] Added to PATH: {path_dir}")
     
     # Add to sys.path
     if conda_site_packages not in sys.path:
         sys.path.insert(0, conda_site_packages)
-        print(f"[ENV] ✅ Added to sys.path: {conda_site_packages}")
+        print(f"[ENV] [OK] Added to sys.path: {conda_site_packages}")
     
     return conda_site_packages
 
@@ -221,25 +221,25 @@ def setup_macos_conda_env(conda_base, conda_env):
             current_path = os.environ.get('PATH', '')
             if path_dir not in current_path:
                 os.environ['PATH'] = path_dir + os.pathsep + current_path
-                print(f"[ENV] ✅ Added to PATH: {path_dir}")
+                print(f"[ENV] [OK] Added to PATH: {path_dir}")
     
     # Update library path
     if os.path.exists(conda_lib):
         dyld_path = os.environ.get('DYLD_LIBRARY_PATH', '')
         if conda_lib not in dyld_path:
             os.environ['DYLD_LIBRARY_PATH'] = conda_lib + os.pathsep + dyld_path
-            print(f"[ENV] ✅ Added to DYLD_LIBRARY_PATH: {conda_lib}")
+            print(f"[ENV] [OK] Added to DYLD_LIBRARY_PATH: {conda_lib}")
     
     # Add to sys.path
     if conda_site_packages not in sys.path:
         sys.path.insert(0, conda_site_packages)
-        print(f"[ENV] ✅ Added to sys.path: {conda_site_packages}")
+        print(f"[ENV] [OK] Added to sys.path: {conda_site_packages}")
     
     # Add to PYTHONPATH
     current_pythonpath = os.environ.get("PYTHONPATH", "")
     if conda_site_packages not in current_pythonpath:
         os.environ["PYTHONPATH"] = conda_site_packages + os.pathsep + current_pythonpath
-        print(f"[ENV] ✅ Added to PYTHONPATH: {conda_site_packages}")
+        print(f"[ENV] [OK] Added to PYTHONPATH: {conda_site_packages}")
     
     return conda_site_packages
 
@@ -273,7 +273,7 @@ def onStart():
         print(f"[ENV] Retrieved - Username: '{username}', Environment: '{conda_env}'")
         
     except Exception as e:
-        print(f"[ENV] ❌ CRITICAL ERROR: Cannot access condaParam DAT!")
+        print(f"[ENV] [ERROR] CRITICAL ERROR: Cannot access condaParam DAT!")
         print(f"[ENV] Error: {e}")
         print(f"[ENV] Please ensure condaParam DAT exists with:")
         print(f"[ENV]   Row 1: Condaenv | your_environment_name")
@@ -282,7 +282,7 @@ def onStart():
     
     # Validate parameters
     if not username or not conda_env or username.strip() == '' or conda_env.strip() == '':
-        print(f"[ENV] ❌ ERROR: Invalid parameters from condaParam DAT!")
+        print(f"[ENV] [ERROR] Invalid parameters from condaParam DAT!")
         print(f"[ENV] Username: '{username}', Environment: '{conda_env}'")
         return False
     
@@ -294,7 +294,7 @@ def onStart():
     print(f"[ENV] Platform: {system_platform}")
     
     if system_platform not in ['Windows', 'Darwin']:
-        print(f"[ENV] ❌ Unsupported platform: {system_platform}")
+        print(f"[ENV] [ERROR] Unsupported platform: {system_platform}")
         return False
     
     try:
@@ -303,7 +303,7 @@ def onStart():
         conda_locations = find_conda_environments(username)
         
         if not conda_locations:
-            print(f"[ENV] ❌ No conda installations found!")
+            print(f"[ENV] [ERROR] No conda installations found!")
             print(f"[ENV] Please ensure conda/miniconda/miniforge is installed")
             return False
         
@@ -317,11 +317,11 @@ def onStart():
             env_path = os.path.join(location, 'envs', conda_env)
             if os.path.exists(env_path):
                 conda_base = env_path
-                print(f"[ENV] ✅ Found environment: {conda_base}")
+                print(f"[ENV] [OK] Found environment: {conda_base}")
                 break
         
         if not conda_base:
-            print(f"[ENV] ❌ Environment '{conda_env}' not found in any conda installation!")
+            print(f"[ENV] [ERROR] Environment '{conda_env}' not found in any conda installation!")
             print(f"[ENV] Searched in:")
             for location in conda_locations:
                 env_path = os.path.join(location, 'envs', conda_env)
@@ -334,7 +334,7 @@ def onStart():
         elif system_platform == 'Darwin':
             site_packages = setup_macos_conda_env(conda_base, conda_env)
         
-        print(f"[ENV] ✅ Environment setup complete!")
+        print(f"[ENV] [OK] Environment setup complete!")
         print(f"[ENV] Site-packages: {site_packages}")
         
         # Detect compute devices
@@ -353,7 +353,7 @@ def onStart():
         return True
         
     except Exception as e:
-        print(f"[ENV] ❌ CRITICAL ERROR during setup: {e}")
+        print(f"[ENV] [ERROR] CRITICAL ERROR during setup: {e}")
         import traceback
         traceback.print_exc()
         return False
