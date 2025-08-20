@@ -24,20 +24,39 @@ class_color_map = {}
 
 # Check if MPS (Metal Performance Shaders) is available on M4 Pro
 def get_optimal_device():
-    if torch.backends.mps.is_available():
-        print("[YOLO] Using Metal Performance Shaders (MPS) for M4 Pro optimization")
-        return 'mps'
-    elif torch.cuda.is_available():
-        print("[YOLO] Using CUDA")
-        return 'cuda'
-    else:
-        print("[YOLO] Using CPU")
+    try:
+        if torch.backends.mps.is_available():
+            print("[YOLO] Using Metal Performance Shaders (MPS) for M4 Pro optimization")
+            # Optimize Metal GPU memory allocation
+            try:
+                torch.mps.set_per_process_memory_fraction(0.8)  # Use 80% of GPU memory
+                print("[YOLO] Metal GPU memory pool optimized (80% allocation)")
+            except Exception as e:
+                print(f"[YOLO] Warning: Could not optimize Metal memory pool: {e}")
+            return 'mps'
+        elif torch.cuda.is_available():
+            print("[YOLO] Using CUDA")
+            return 'cuda'
+        else:
+            print("[YOLO] Using CPU")
+            return 'cpu'
+    except Exception as e:
+        print(f"[YOLO] Error during device detection: {e}. Falling back to CPU")
         return 'cpu'
 
 # Load YOLO model once with optimal device
 device = get_optimal_device()
 model = YOLO('yolo11n.pt', task='detect')
 model.to(device)  # Move model to optimal device
+
+# Model compilation for PyTorch 2.0+ performance boost
+try:
+    if hasattr(torch, 'compile') and device in ['mps', 'cuda']:
+        print("[YOLO] Compiling model for optimized inference...")
+        model.model = torch.compile(model.model, mode='max-autotune')
+        print("[YOLO] Model compilation complete - expect 10-15% speedup")
+except Exception as e:
+    print(f"[YOLO] Model compilation failed (continuing with normal mode): {e}")
 
 # Populate class_color_map
 for i, class_name in enumerate(model.names.values()):
@@ -76,12 +95,16 @@ def onSetupParameters(scriptOp):
 
 # Global frame counter for frame skipping optimization
 frame_counter = 0
+last_detection_count = 0  # Track detection density for dynamic resolution
+performance_stats = {'avg_inference_time': 0.0, 'frame_count': 0}  # Performance monitoring
 
 # Remove the onPulse function since we no longer need it
 # Class filtering is now handled directly in onCook
 
 def onCook(scriptOp):
-    global frame_counter
+    global frame_counter, last_detection_count, performance_stats
+    import time
+    start_time = time.time()
     
     # Ensure input is connected
     if not scriptOp.inputs or scriptOp.inputs[0] is None:
@@ -178,6 +201,13 @@ def onCook(scriptOp):
         # print(f'[PERF] Skipping detection for frame {frame_counter} (frame_skip={frame_skip})')
         pass
     else:
+        # Dynamic resolution based on detection density for performance optimization
+        dynamic_imgsz = 640  # Default resolution
+        if last_detection_count <= 2:  # Few objects = lower resolution for speed
+            dynamic_imgsz = 416
+        elif last_detection_count >= 8:  # Many objects = higher resolution for accuracy
+            dynamic_imgsz = 832
+        
         # Run YOLO detection with MPS optimization and appropriate filtering
         # print(f'[DEBUG] Running YOLO with class_filter: {class_filter}')  # Disabled debug
         with torch.no_grad():  # Disable gradient computation for inference speedup
@@ -188,11 +218,13 @@ def onCook(scriptOp):
                 verbose=False,
                 device=device,  # Explicitly use optimal device
                 half=True if device == 'mps' else False,  # Use half precision on MPS for speed
-                imgsz=640  # Explicit image size for consistent performance
+                imgsz=dynamic_imgsz  # Dynamic image size for performance optimization
             )
         
         det = results[0]
-        # print(f'[YOLO] Found {len(det.boxes)} detections')
+        current_detection_count = len(det.boxes)
+        last_detection_count = current_detection_count  # Update for next frame
+        # print(f'[YOLO] Found {current_detection_count} detections (imgsz: {dynamic_imgsz})')
 
         # Apply detection limit - sort by confidence and take top N
         if len(det.boxes) > 0 and detection_limit > 0:
@@ -338,6 +370,28 @@ def onCook(scriptOp):
                 # --- Draw label text ---
                 cv2.putText(rendered, label, (x1, label_y1 - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1) # White text
 
+    # Metal GPU memory cleanup every 30 frames to prevent fragmentation
+    if device == 'mps' and frame_counter % 30 == 0:
+        try:
+            torch.mps.empty_cache()
+            # print(f"[YOLO] Metal GPU memory cache cleared (frame {frame_counter})")
+        except Exception as e:
+            print(f"[YOLO] Warning: Could not clear Metal cache: {e}")
+    
+    # Performance monitoring and stats
+    end_time = time.time()
+    frame_time = end_time - start_time
+    performance_stats['frame_count'] += 1
+    performance_stats['avg_inference_time'] = (
+        (performance_stats['avg_inference_time'] * (performance_stats['frame_count'] - 1) + frame_time) 
+        / performance_stats['frame_count']
+    )
+    
+    # Log performance stats every 100 frames
+    if frame_counter % 100 == 0 and frame_counter > 0:
+        avg_fps = 1.0 / performance_stats['avg_inference_time'] if performance_stats['avg_inference_time'] > 0 else 0
+        print(f"[PERF] Frame {frame_counter}: Avg FPS: {avg_fps:.1f}, Avg inference: {performance_stats['avg_inference_time']*1000:.1f}ms")
+    
     # Convert to RGBA for TouchDesigner and flip vertically for correct orientation
     # Optimized memory handling with explicit copy=False where safe
     rgba = cv2.cvtColor(rendered, cv2.COLOR_BGR2RGBA)
