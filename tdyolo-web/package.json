@@ -1,0 +1,20 @@
+{
+    "name": "tdyolo-web",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "description": "Browser-side YOLO detection app for TDYolo_v2 — runs in TouchDesigner's webrenderTOP, talks to TD over WebSocket. Architecture inspired by torinmb/yolo-touchdesigner, implementation independent.",
+    "license": "MIT",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "onnxruntime-web": "^1.20.1"
+    },
+    "devDependencies": {
+        "vite": "^5.4.0",
+        "vite-plugin-static-copy": "^1.0.6"
+    }
+}

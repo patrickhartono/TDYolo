@@ -1,0 +1,49 @@
+<!--
+  TDYolo_v2 browser inference page.
+  Loaded inside TouchDesigner's webrenderTOP (or any external browser
+  pointed at http://localhost:<wsPort>/).
+  License: MIT.
+  Architecture inspired by torinmb/yolo-touchdesigner; implementation independent.
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TDYolo_v2</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                background: #000;
+                color: #ccc;
+                font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+                overflow: hidden;
+            }
+            #status {
+                position: fixed;
+                top: 8px;
+                left: 8px;
+                padding: 4px 8px;
+                background: rgba(0, 0, 0, 0.6);
+                border-radius: 3px;
+                z-index: 10;
+            }
+            #video {
+                display: none;
+            }
+            #overlay {
+                display: block;
+                width: 100vw;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="status">Loading model…</div>
+        <script type="module" src="/src/main.js"></script>
+    </body>
+</html>
