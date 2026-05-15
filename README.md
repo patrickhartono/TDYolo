@@ -34,7 +34,7 @@ Two ways to use the component:
    git clone https://github.com/patrickhartono/TDYolo.git
    cd TDYolo
    ```
-2. Open `TDYolo_v2-Fix.25.toe` in TouchDesigner 2023.12000 or newer.
+2. Open `TDYolo_v2.toe` in TouchDesigner 2023.12000 or newer.
 
 ### Reading detections (both options)
 
@@ -150,7 +150,7 @@ Frames travel TouchDesigner → browser as compact 12-byte-header binary message
 ```
 TDYolo/
 ├── README.md                          # this file
-├── TDYolo_v2-Fix.25.toe               # bundled TouchDesigner project
+├── TDYolo_v2.toe                      # bundled TouchDesigner project
 ├── TDYolo_v2.tox                      # exported drop-in component (drag into your own .toe)
 ├── ARCHITECTURE-TDYolo_v2.md          # node-level architecture reference
 ├── COMPARISON.md                      # TDYolo v1 vs TDYolo_v2 vs torinmb's yolo container
