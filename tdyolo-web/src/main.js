@@ -31,14 +31,35 @@ const setStatus = (msg) => {
     }
 };
 
+// Best-effort: open a WS to TD and send an error/status message.
+// Used before the main WS is established (e.g. to report ONNX init failure).
+function _reportToTD(payload) {
+    try {
+        const sock = new WebSocket(`ws://localhost:${WS_PORT}`);
+        sock.onopen = () => { sock.send(JSON.stringify(payload)); sock.close(); };
+    } catch (_) { /* best-effort */ }
+}
+
 (async function main() {
     setStatus("Loading ONNX session…");
     const baseURL = new URL(".", location.href).href;
+    console.log("[TDYolo_v2] crossOriginIsolated =", !!self.crossOriginIsolated,
+                "| SharedArrayBuffer =", typeof SharedArrayBuffer !== "undefined",
+                "| baseURL =", baseURL);
+    const ONNX_TIMEOUT_MS = 45000;
     try {
-        await initSessions(baseURL);
+        await Promise.race([
+            initSessions(baseURL),
+            new Promise((_, rej) => setTimeout(
+                () => rej(new Error(`ONNX init timed out after ${ONNX_TIMEOUT_MS}ms`)),
+                ONNX_TIMEOUT_MS,
+            )),
+        ]);
     } catch (e) {
-        setStatus(`Model load failed: ${e?.message || e}`);
-        console.error("[TDYolo_v2] initSessions failed", e);
+        const msg = e?.message || String(e);
+        setStatus(`Model load failed: ${msg}`);
+        console.error("[TDYolo_v2] initSessions failed:", msg);
+        _reportToTD({ type: "tderror", source: "initSessions", msg });
         return;
     }
 
@@ -82,7 +103,12 @@ const setStatus = (msg) => {
 
         ws.onopen = async () => {
             backoffMs = 200; // reset for next disconnect
-            ws.send(JSON.stringify({ type: "loaded" }));
+            ws.send(JSON.stringify({
+            type: "loaded",
+            port: WS_PORT,
+            binary: USE_BINARY,
+            crossOriginIsolated: !!self.crossOriginIsolated,
+        }));
             // Announce available webcams so TD can populate its Webcam menu.
             try {
                 const devices = await listWebcamDevices();

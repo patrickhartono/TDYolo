@@ -40,6 +40,11 @@ import { COCO_NAMES } from "../config.js";
 // the served HTML (which is what we want — the TouchDesigner-hosted webserverDAT
 // flattens path lookups to basename, so all .wasm files appear at /).
 ort.env.wasm.wasmPaths = "./";
+// Disable proxy worker and threading: both require SharedArrayBuffer workers,
+// which hang inside TouchDesigner's webrenderTOP CEF context regardless of
+// COOP/COEP headers. Single-threaded main-thread ONNX works reliably.
+ort.env.wasm.proxy = false;
+ort.env.wasm.numThreads = 1;
 ort.env.allowLocalModels = true;
 ort.env.allowRemoteModels = false;
 ort.env.useBrowserCache = false;
@@ -62,14 +67,32 @@ const NMS_IOU = 0.45; // standard YOLO default; not currently user-tunable
  *                           from the TD-hosted webserverDAT via VFS)
  */
 export async function initSessions(baseURL) {
+    console.log("[TDYolo_v2] initSessions start — USE_CPU =", USE_CPU,
+                "| wasmPaths =", ort.env.wasm.wasmPaths);
+
+    // WebGPU availability check (informational — fallback to WASM on failure).
+    if (!USE_CPU && typeof navigator !== "undefined" && navigator.gpu) {
+        try {
+            const adapter = await navigator.gpu.requestAdapter();
+            console.log("[TDYolo_v2] WebGPU adapter:", adapter ? "OK" : "null (will use WASM)");
+        } catch (gpuErr) {
+            console.warn("[TDYolo_v2] WebGPU requestAdapter threw:", gpuErr);
+        }
+    } else if (!USE_CPU) {
+        console.warn("[TDYolo_v2] navigator.gpu unavailable — will use WASM");
+    }
+
     const providers = USE_CPU ? ["wasm"] : ["webgpu", "wasm"];
 
     if (ENABLE_DET) {
         const modelURL = `${baseURL}models/${MODEL_DETECT_KEY}.onnx`;
+        console.log("[TDYolo_v2] loading model:", modelURL, "providers:", providers);
         detSession = await ort.InferenceSession.create(modelURL, {
             executionProviders: providers,
             graphOptimizationLevel: "all",
         });
+        console.log("[TDYolo_v2] detSession ready — inputs:", detSession.inputNames,
+                    "outputs:", detSession.outputNames);
     }
 
     // SEG-HOOK: load seg model only when ENABLE_SEG=true. In MVP this branch
