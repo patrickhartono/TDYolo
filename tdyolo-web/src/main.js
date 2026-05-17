@@ -11,7 +11,7 @@
 //
 // License: MIT.
 
-import { WS_PORT, USE_BINARY } from "./config.js";
+import { WS_PORT, USE_BINARY, USE_CPU } from "./config.js";
 import { initSessions } from "./inference/onnx.js";
 import {
     handleBinaryMessage,
@@ -22,6 +22,40 @@ import {
     listWebcamDevices,
     setWebSocketSender as setWebcamSender,
 } from "./modes/webcam.js";
+
+// DOM error overlay — visible on webrender output even when WS to TD is broken.
+// Critical for diagnosing silent failures on remote machines where we cannot
+// inspect the browser console directly.
+const errOverlay = document.createElement("pre");
+errOverlay.id = "tdyolo-error-fallback";
+errOverlay.style.cssText =
+    "position:fixed;top:0;left:0;right:0;background:rgba(200,0,0,0.92);" +
+    "color:white;padding:8px;font:11px monospace;z-index:99999;" +
+    "display:none;white-space:pre-wrap;max-height:60vh;overflow:auto;";
+function attachOverlay() {
+    if (document.body && !document.getElementById("tdyolo-error-fallback")) {
+        document.body.appendChild(errOverlay);
+    }
+}
+if (document.body) attachOverlay();
+else document.addEventListener("DOMContentLoaded", attachOverlay);
+
+function showError(msg) {
+    attachOverlay();
+    errOverlay.style.display = "block";
+    const t = new Date().toISOString().slice(11, 23);
+    errOverlay.textContent = (errOverlay.textContent + `\n[${t}] ${msg}`).trim();
+}
+
+window.addEventListener("error", (e) => {
+    const msg = (e.error && (e.error.stack || e.error.message)) || e.message;
+    showError("[window.error] " + msg);
+});
+window.addEventListener("unhandledrejection", (e) => {
+    const r = e.reason;
+    const msg = (r && (r.stack || r.message)) || String(r);
+    showError("[unhandledrejection] " + msg);
+});
 
 const statusEl = document.getElementById("status");
 const setStatus = (msg) => {
@@ -59,6 +93,7 @@ function _reportToTD(payload) {
         const msg = e?.message || String(e);
         setStatus(`Model load failed: ${msg}`);
         console.error("[TDYolo_v2] initSessions failed:", msg);
+        showError("[initSessions] " + msg);
         _reportToTD({ type: "tderror", source: "initSessions", msg });
         return;
     }
@@ -94,7 +129,9 @@ function _reportToTD(payload) {
         try {
             ws = new WebSocket(`ws://localhost:${WS_PORT}`);
         } catch (e) {
+            const msg = e?.message || String(e);
             console.error("[TDYolo_v2] WebSocket ctor threw", e);
+            showError("[ws.constructor] port=" + WS_PORT + " — " + msg);
             scheduleReconnect();
             return;
         }
@@ -104,11 +141,12 @@ function _reportToTD(payload) {
         ws.onopen = async () => {
             backoffMs = 200; // reset for next disconnect
             ws.send(JSON.stringify({
-            type: "loaded",
-            port: WS_PORT,
-            binary: USE_BINARY,
-            crossOriginIsolated: !!self.crossOriginIsolated,
-        }));
+                type: "loaded",
+                port: WS_PORT,
+                binary: USE_BINARY,
+                cpu: USE_CPU,
+                crossOriginIsolated: !!self.crossOriginIsolated,
+            }));
             // Announce available webcams so TD can populate its Webcam menu.
             try {
                 const devices = await listWebcamDevices();

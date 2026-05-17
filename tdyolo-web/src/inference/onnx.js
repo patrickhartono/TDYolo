@@ -70,19 +70,29 @@ export async function initSessions(baseURL) {
     console.log("[TDYolo_v2] initSessions start — USE_CPU =", USE_CPU,
                 "| wasmPaths =", ort.env.wasm.wasmPaths);
 
-    // WebGPU availability check (informational — fallback to WASM on failure).
-    if (!USE_CPU && typeof navigator !== "undefined" && navigator.gpu) {
+    // Torin-style WebGPU probe: explicitly request a GPU device (not just adapter)
+    // before deciding to use WebGPU. If device acquisition fails, fall back to
+    // WASM as the ONLY provider — never pass an array fallback, since ORT's
+    // internal provider switching can crash deeper than JS can catch.
+    let providers;
+    if (USE_CPU) {
+        providers = ["wasm"];
+    } else if (typeof navigator === "undefined" || !navigator.gpu) {
+        console.warn("[TDYolo_v2] navigator.gpu unavailable — using WASM");
+        providers = ["wasm"];
+    } else {
         try {
             const adapter = await navigator.gpu.requestAdapter();
-            console.log("[TDYolo_v2] WebGPU adapter:", adapter ? "OK" : "null (will use WASM)");
+            if (!adapter) throw new Error("WebGPU adapter is null");
+            const device = await adapter.requestDevice();
+            if (!device) throw new Error("WebGPU device is null");
+            console.log("[TDYolo_v2] WebGPU device acquired — using WebGPU");
+            providers = ["webgpu"];
         } catch (gpuErr) {
-            console.warn("[TDYolo_v2] WebGPU requestAdapter threw:", gpuErr);
+            console.warn("[TDYolo_v2] WebGPU unavailable, falling back to WASM:", gpuErr);
+            providers = ["wasm"];
         }
-    } else if (!USE_CPU) {
-        console.warn("[TDYolo_v2] navigator.gpu unavailable — will use WASM");
     }
-
-    const providers = USE_CPU ? ["wasm"] : ["webgpu", "wasm"];
 
     if (ENABLE_DET) {
         const modelURL = `${baseURL}models/${MODEL_DETECT_KEY}.onnx`;
