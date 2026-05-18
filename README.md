@@ -8,6 +8,8 @@ A self-contained TouchDesigner component that runs YOLO11 object detection insid
 
 > ⚠️ **Requires an internet connection.** The embedded headless browser needs network access while running (to bootstrap the inference runtime). Make sure your machine is online.
 
+> ✅ **Works on TouchDesigner Commercial and Non-Commercial.** The binary frame pipeline stays within the Non-Commercial 1280×720 TOP cap (frames are 640×640).
+
 ![Project Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue)
 ![TouchDesigner](https://img.shields.io/badge/TouchDesigner-2023.12000%2B-orange)
@@ -111,10 +113,9 @@ Changing any of these parameters auto-reloads the embedded browser inference pag
    flip1 → letterbox (640×640) → source ───┐
                                            │
                                            ▼
-                                   glsl2 (RGB → 3 mono planes, 1920×640 mono8fixed)
-                                           │
-                                           ▼
-                                   chopexec3 (trigger=absTime.frame)
+                                   chopexec3 (reads source RGBA directly,
+                                              packs to CHW uint8 in Python,
+                                              trigger=absTime.frame)
                                            │
                                            ▼  WebSocket (binary) → 127.0.0.1:<port>
                                    ┌───────┴────────────────────────────┐
